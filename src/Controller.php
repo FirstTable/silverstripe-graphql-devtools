@@ -4,6 +4,7 @@ namespace SilverStripe\GraphQLDevTools;
 
 use SilverStripe\Control\Controller as BaseController;
 use SilverStripe\Control\HTTPRequest;
+use SilverStripe\Control\Middleware\RequestHandlerMiddlewareAdapter;
 use SilverStripe\GraphQL\Controller as GraphQLController;
 use SilverStripe\Control\Director;
 use SilverStripe\Core\Injector\Injector;
@@ -101,11 +102,14 @@ class Controller extends BaseController
 
             try {
                 $routeController = Injector::inst()->get($routeClass);
+                if ($routeController instanceof RequestHandlerMiddlewareAdapter) {
+                    $routeController = $routeController->getRequestHandler();
+                }
                 if ($routeController instanceof GraphQLController) {
                     $schemaKey = class_exists(Schema::class)
                         ? $routeController->getSchema()->getSchemaKey()
                         : $routeController->getManager()->getSchemaKey();
-                    if ($schemas === '*' || in_array($schemaKey, $schemas)) {
+                    if ($schemas === '*' || in_array($schemaKey, $schemas) && !isset($routes[$schemaKey])) {
                         $routes[$schemaKey] = Path::normalise($pattern, true);
                     }
                 }
